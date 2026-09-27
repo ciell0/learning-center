@@ -16,7 +16,6 @@ VITE_SUPABASE_ANON_KEY=your_anon_key
 VITE_SUPABASE_STORAGE_BUCKET=dokumen-magang
 SUPABASE_URL=https://your-project.supabase.co
 SUPABASE_SERVICE_ROLE_KEY=your_service_role_key
-RESEND_API_KEY=your_resend_key
 SUPABASE_PROJECT_ID=your_project_ref
 ```
 
@@ -39,44 +38,21 @@ supabase link --project-ref <your-project-ref>
 supabase db push
 ```
 
-## 5. Deploy Edge Function
-
-```bash
-supabase functions deploy send-magang-email
-```
-
-## 6. Add secrets
-
-```bash
-supabase secrets set RESEND_API_KEY=your_resend_key SUPABASE_SERVICE_ROLE_KEY=your_service_role_key
-```
-
-## 7. Run the app
+## 5. Run the app
 
 ```bash
 npm run dev
 ```
 
-## 8. Test email flow
+## 6. Test email flow
 
-Use the `send-magang-email` function with a valid `pelamar_id` from `pelamar_magang` table.
-
-Example payload:
-
-```json
-{
-  "pelamar_id": "<uuid-from-pelamar-magang>"
-}
-```
-
-The function will:
-- fetch the pelamar record
-- validate email and status
-- choose the email template
-- send via Resend
-- log the result to `email_logs`
+Open the applicant data page, open an applicant detail, and click **Kirim Email**.
+The browser will open the user's default mail client with the applicant's email,
+the status-specific subject, and the populated template body. The admin can edit
+the draft and must click **Send** in the mail client to send it.
 
 ## Notes
 - The bucket `dokumen-magang` must remain private.
 - Only signed URLs should be used for document access from the frontend.
-- Do not expose service-role or email provider secrets in the frontend.
+- The email feature does not use Resend or any server-side email provider.
+- The `mailto:` flow only opens a draft; the application never sends the email automatically.

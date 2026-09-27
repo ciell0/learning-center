@@ -202,31 +202,59 @@ export async function getDocumentUrl(filePath: string | null | undefined): Promi
   return data.signedUrl;
 }
 
+const EMAIL_TEMPLATES: Record<Status, { subject: string; text: string }> = {
+  terverifikasi: {
+    subject: '[BI Malang] Status Magang Anda: Terverifikasi',
+    text: 'Yth. {{nama_lengkap}},\n\nSelamat! Anda telah terverifikasi untuk program magang {{jenis_program}} di divisi {{divisi}} untuk periode {{periode_magang}}.\n\nTim kami akan menghubungi Anda lebih lanjut melalui email ini.\n\nHormat kami,\nTim Rekrutmen BI Malang',
+  },
+  accepted: {
+    subject: '[BI Malang] Selamat! Anda Diterima',
+    text: 'Yth. {{nama_lengkap}},\n\nSelamat! Anda dinyatakan DITERIMA sebagai peserta magang di divisi {{divisi}} pada program {{jenis_program}} periode {{periode_magang}}.\n\nKami menantikan kehadiran Anda.\n\nHormat kami,\nTim Rekrutmen BI Malang',
+  },
+  rejected: {
+    subject: '[BI Malang] Hasil Seleksi Magang',
+    text: 'Yth. {{nama_lengkap}},\n\nTerima kasih atas minat dan waktu Anda mengikuti proses seleksi magang {{jenis_program}} di {{universitas}}.\n\nSetelah evaluasi, saat ini Anda belum lolos pada divisi {{divisi}}. Semoga kesempatan dapat terulang di kesempatan berikutnya.\n\nHormat kami,\nTim Rekrutmen BI Malang',
+  },
+  waiting: {
+    subject: '[BI Malang] Status Pendaftaran Magang',
+    text: 'Yth. {{nama_lengkap}},\n\nPendaftaran Anda untuk program magang {{jenis_program}} masih dalam tahap proses administrasi dan review. Kami akan menginformasikan status selanjutnya melalui email ini.\n\nHormat kami,\nTim Rekrutmen BI Malang',
+  },
+  review: {
+    subject: '[BI Malang] Pendaftaran Magang Sedang Ditinjau',
+    text: 'Yth. {{nama_lengkap}},\n\nPendaftaran Anda untuk program magang {{jenis_program}} sedang dalam tahap review oleh tim admin. Mohon menunggu informasi lebih lanjut.\n\nHormat kami,\nTim Rekrutmen BI Malang',
+  },
+};
+
+function applyEmailTemplate(templateText: string, applicant: Applicant): string {
+  const values: Record<string, string> = {
+    nama_lengkap: applicant.name,
+    universitas: applicant.university,
+    divisi: applicant.division,
+    periode_magang: applicant.period,
+    status: applicant.status,
+    jenis_program: applicant.program,
+  };
+
+  return templateText.replace(/{{\s*([a-zA-Z0-9_]+)\s*}}/g, (_, key: string) => values[key] || '');
+}
+
 export async function sendEmailPelamar(id: string): Promise<{ success: boolean; message: string }> {
-  if (!hasSupabaseConfig()) {
-    throw new Error('Konfigurasi Supabase belum lengkap. Tambahkan VITE_SUPABASE_URL dan VITE_SUPABASE_ANON_KEY.');
+  const applicant = await getPelamarById(id);
+  const recipientEmail = applicant?.email?.trim();
+
+  if (!applicant || !recipientEmail || recipientEmail === '-') {
+    throw new Error('Email pelamar tidak tersedia.');
   }
 
-  const { data: pelamar, error: pelamarError } = await supabase
-    .from('pelamar_magang')
-    .select('*')
-    .eq('id', id)
-    .single();
+  const template = EMAIL_TEMPLATES[applicant.status] || EMAIL_TEMPLATES.waiting;
+  const subject = template.subject;
+  const body = applyEmailTemplate(template.text, applicant);
+  const mailtoUrl = `mailto:${encodeURIComponent(recipientEmail)}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
 
-  if (pelamarError || !pelamar) {
-    throw new Error('Pelamar tidak ditemukan untuk dikirim email.');
-  }
-
-  const { error: invokeError } = await supabase.functions.invoke('send-magang-email', {
-    body: { pelamar_id: id },
-  });
-
-  if (invokeError) {
-    throw new Error(invokeError.message || 'Gagal mengirim email melalui Edge Function.');
-  }
+  window.location.href = mailtoUrl;
 
   return {
     success: true,
-    message: 'Email berhasil diproses oleh edge function.',
+    message: 'Draft email dibuka di aplikasi email default.',
   };
 }

@@ -36,11 +36,7 @@ supabase link --project-ref "$PROJECT_REF"
 echo "Applying database migrations..."
 supabase db push
 
-echo "Deploying Edge Function..."
-supabase functions deploy send-magang-email
-
 echo "Setup completed."
 echo "Next steps:"
 echo "  1. Fill in .env with your actual Supabase values"
-echo "  2. Set Supabase secrets: RESEND_API_KEY, SUPABASE_SERVICE_ROLE_KEY"
-echo "  3. Run: npm run dev"
+echo "  2. Run: npm run dev"

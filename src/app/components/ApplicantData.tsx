@@ -265,7 +265,7 @@ function ApplicantModal({
                     className="col-span-2 flex items-center justify-center gap-2 px-3 py-2.5 rounded-xl text-xs font-semibold transition-all disabled:opacity-60"
                     style={{ background: 'var(--muted)', color: 'var(--muted-foreground)', border: '1px solid var(--border)' }}
                   >
-                    <Mail size={13} /> {sendingEmail ? 'Mengirim...' : 'Kirim Email'}
+                    <Mail size={13} /> {sendingEmail ? 'Membuka...' : 'Kirim Email'}
                   </button>
                 </div>
               </section>
@@ -366,7 +366,7 @@ export function ApplicantDataPage() {
       }
 
       const result = await sendEmailPelamar(id);
-      await updateTindakanAdmin(id, `Mengirim email status ${STATUS_LABELS[applicant.status]}`);
+      await updateTindakanAdmin(id, `Membuka draft email status ${STATUS_LABELS[applicant.status]}`);
       setError(result.success ? '' : result.message);
     } catch (reason) {
       setError(reason instanceof Error ? reason.message : 'Gagal mengirim email.');
